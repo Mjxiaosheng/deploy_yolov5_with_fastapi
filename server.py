@@ -23,7 +23,7 @@ app = FastAPI()
 template = Jinja2Templates(directory="templates")
 
 @app.post("/upload/")
-async def create_upload_file(file: UploadFile = File(...)):
+async def create_upload_file(request:Request,file: UploadFile = File(...)):
     content = await file.read()
     file_name = file.filename
     dir_in = "./inference/input/"+file_name
@@ -31,20 +31,22 @@ async def create_upload_file(file: UploadFile = File(...)):
     with open(dir_in, "wb") as f:
         f.write(content)
     detect(source=dir_in,out=dir_out)
-    save_path = str(Path(dir_out) / file_name)
-    # print(save_path)
-
-
-    # with open("./inference/output")
+    with open(os.path.join(dir_out, file_name.split(".")[0]+".txt"), "r") as t:
+        result_txt = t.read()
+        return template.TemplateResponse("result.html",{"request":request,"imgname": file_name, "result":result_txt})
 
     # assert
     # 如何使用yolov5直接读取传递的img对象？？？TODO
 
-    return FileResponse(save_path)
+@app.get("/inference/output/{filename}")
+async def get_img(filename:str):
+    return FileResponse("./inference/output/"+filename)
+
 
 @app.get("/")
 async def index(request:Request):
     return template.TemplateResponse("index.html", {"request": request})
+
 
 if __name__ == '__main__':
     import uvicorn
