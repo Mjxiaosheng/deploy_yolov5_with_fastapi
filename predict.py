@@ -42,7 +42,6 @@ def detect( save_img = True,
         model.half()  # to FP16
 
     # Set Dataloader
-
     dataset = LoadImages(source, img_size=imgsz) # 图片类
 
     # Get names and colors
@@ -72,15 +71,18 @@ def detect( save_img = True,
         for i, det in enumerate(pred):  # detections per image
             p, s, im0 = path, '', im0s
             save_path = str(Path(out) / Path(p).name)
-            s += '%gx%g ' % img.shape[2:]  # print string
+            txt_path = str(Path(out) / Path(p).stem)
+            s += '%gx%g \n' % img.shape[2:]  # print string
             if det is not None and len(det):
                 # Rescale boxes from img_size to im0 size
                 det[:, :4] = scale_coords(img.shape[2:], det[:, :4], im0.shape).round()
 
-                # Print results
+                # Print and save results
                 for c in det[:, -1].unique():
                     n = (det[:, -1] == c).sum()  # detections per class
-                    s += '%g %ss, ' % (n, names[int(c)])  # add to string
+                    s += '%g %s, ' % (n, names[int(c)])  # add to string
+                with open(txt_path + '.txt', 'w') as f:
+                    f.write(s)
 
                 # Write results
                 for *xyxy, conf, cls in det:
@@ -92,11 +94,9 @@ def detect( save_img = True,
             # Print time (inference + NMS)
             print('%sDone. (%.3fs)' % (s, t2 - t1))
 
-            # Save results (image with detections)
+    # Save results (image with detections)
     if save_txt or save_img:
         print('Results saved to %s' % os.getcwd() + os.sep + out)
-        if platform == 'darwin':  # MacOS
-            os.system('open ' + save_path)
 
     print('Done. (%.3fs)' % (time.time() - t0))
 
